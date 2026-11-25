@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@scure/starknet": "^1.1.2",
+    "@starknet-io/get-starknet-core": "^6.1.0",
     "starknet": "^7.6.4"
   }
 }

@@ -1,7 +1,8 @@
 // Game select: big cabinet cards with pixel covers made from real Beast art, a carousel driven by
-// the joystick (or taps), and a small operator row (THE AI TEST, ABOUT, SOUND, CALM).
+// the joystick (or taps), and a small operator row (PLAYER, THE AI TEST, ABOUT, SOUND, CALM).
 import type { App, Route } from '../main.ts';
 import type { RosterEntry } from '../data/roster.ts';
+import { account } from '../chain/account.ts';
 import { sound } from '../game/audio.ts';
 import { music } from '../game/music.ts';
 import { channelCaught, isUnlocked, type Channel } from '../game/channels.ts';
@@ -235,6 +236,7 @@ export function arcadeScreen(app: App) {
   // operator row
   interface Op { label: () => string; run: () => void }
   const OPS: Op[] = [
+    { label: () => (account.state().mode === 'wallet' ? 'PLAYER W' : 'PLAYER'), run: () => launch({ name: 'player', back: 'arcade' }) },
     { label: () => 'THE AI TEST', run: () => launch({ name: 'ai-test' }) },
     { label: () => 'ABOUT', run: () => launch({ name: 'about' }) },
     { label: () => `SOUND ${settings.muted ? 'OFF' : 'ON'}`, run: () => { sound.setMuted(!settings.muted); saveSettings(); if (!settings.muted) sound.sfx('select'); renderOps(); } },

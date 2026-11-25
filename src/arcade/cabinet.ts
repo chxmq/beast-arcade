@@ -1,8 +1,10 @@
 // The cabinet: marquee, bezel, the 16:9 CRT screen (app.root), and the control panel with its
-// joystick, A B C, START, the coin slot and the CREDITS / TICKETS counters. Built once.
+// joystick, A B C, START, the coin slot, the CREDITS / TICKETS counters and the player chip
+// (callsign, a lit W for a wallet player; opens the PLAYER card). Built once.
 // Layout is pure CSS (arcade.css): desktop cabinet scaled to the viewport, phone portrait
 // (screen on top, panel below as the touch controller), phone landscape (stick left, buttons right).
 import type { RosterEntry } from '../data/roster.ts';
+import { account, type AccountState } from '../chain/account.ts';
 import { artCrop } from '../game/beasts.ts';
 import { settings } from '../game/settings.ts';
 import { h } from '../ui/dom.ts';
@@ -55,6 +57,10 @@ export interface Cabinet {
   marqueeArt(left: RosterEntry | undefined, right: RosterEntry | undefined): void;
   /** Re-read settings.calm (bulbs stop chasing, no flashes). */
   syncCalm(): void;
+  /** What a tap on the player chip does (main.ts opens the PLAYER card). */
+  onPlayer(fn: () => void): void;
+  /** Mid-game the chip is dimmed and ignores taps, so a stray touch never ends a run. */
+  setPlayerLocked(locked: boolean): void;
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -117,7 +123,28 @@ export function buildCabinet(host: HTMLElement): Cabinet {
   const screen = h('div', { class: 'cab-screen', id: 'screen' });
   const wipe = h('div', { class: 'cab-wipe', 'aria-hidden': 'true' });
   const crt = h('div', { class: 'cab-crt' }, screen, h('div', { class: 'cab-glass', 'aria-hidden': 'true' }), wipe);
-  const bezel = h('div', { class: 'cab-bezel' }, crt, h('div', { class: 'cab-plate', 'aria-hidden': 'true' }, h('span', {}, '1 PLAYER'), h('span', {}, 'FREE PLAY')));
+  const bezel = h('div', { class: 'cab-bezel' }, crt, h('div', { class: 'cab-plate', 'aria-hidden': 'true' }, h('span', {}, '1 PLAYER . FREE PLAY')));
+
+  // ---- player chip
+  const chipName = h('b', { class: 'cab-pl-name' }, '');
+  const chipW = h('i', { class: 'cab-pl-w', 'aria-hidden': 'true' }, 'W');
+  const chip = h('button', { class: 'cab-pl', type: 'button', tabindex: '-1' }, h('span', { class: 'cab-pl-lbl' }, 'P1'), chipName, chipW);
+  let openPlayer: (() => void) | null = null;
+  chip.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!chip.classList.contains('locked')) openPlayer?.();
+  });
+  const paintChip = (s: AccountState) => {
+    const wallet = s.mode === 'wallet';
+    chipName.textContent = s.callsign;
+    chipW.hidden = !wallet;
+    chip.classList.toggle('wallet', wallet);
+    const label = `Player ${s.callsign}, ${wallet ? 'wallet connected' : 'guest'}. Open the player card.`;
+    chip.setAttribute('aria-label', label);
+    chip.title = wallet ? `${s.callsign}: wallet player` : `${s.callsign}: guest player`;
+  };
+  paintChip(account.state());
+  account.subscribe(paintChip);
 
   // ---- counters
   const credLed = led('credits', 'CREDITS', 2);
@@ -146,7 +173,7 @@ export function buildCabinet(host: HTMLElement): Cabinet {
   const sys = h('div', { class: 'cab-sys' }, start, coin);
 
   const deckBg = h('div', { class: 'cab-deck', 'aria-hidden': 'true' });
-  const el = h('div', { class: 'cab' }, marquee, bezel, deckBg, credLed.el, tixLed.el, stick, btns, sys);
+  const el = h('div', { class: 'cab' }, marquee, bezel, deckBg, credLed.el, tixLed.el, chip, stick, btns, sys);
   host.append(el);
 
   // ---- pointer -> controls (multi-touch: every pointer owns what it presses)
@@ -287,6 +314,13 @@ export function buildCabinet(host: HTMLElement): Cabinet {
       if (right) beastR.append(artCrop(right));
     },
     syncCalm,
+    onPlayer(fn) {
+      openPlayer = fn;
+    },
+    setPlayerLocked(locked) {
+      chip.classList.toggle('locked', locked);
+      chip.setAttribute('aria-disabled', String(locked));
+    },
   };
   return built;
 }

@@ -1,7 +1,7 @@
 import { keccak } from '@scure/starknet';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { maskBits, maskFromHex, maskToHex, resultToJson } from '../broadcast/api.ts';
-import { clearDexCache, decodeDexResult, fetchOnchainDex, GET_DEX_SELECTOR, newlyCaught, popcount, rememberDex, rememberedDex } from './dex.ts';
+import { BEST_SELECTOR, clearDexCache, decodeBestResult, decodeDexResult, fetchOnchainDex, fetchRankedBest, GET_DEX_SELECTOR, newlyCaught, popcount, rememberDex, rememberedDex } from './dex.ts';
 import { parseDexUpdated, parseReceipt } from './receipt.ts';
 
 const sel = (name: string) => '0x' + keccak(new TextEncoder().encode(name)).toString(16);
@@ -125,6 +125,23 @@ describe('get_dex call', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('reads best(player_pub) the same way, cached apart from get_dex', async () => {
+    expect(BEST_SELECTOR).toBe(sel('best'));
+    expect(decodeBestResult(['0x4d2'])).toBe(1234);
+    expect(decodeBestResult(['0x100000000'])).toBeNull();
+    expect(decodeBestResult([])).toBeNull();
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const req = JSON.parse(String(init?.body)).params.request;
+      return ok(req.entry_point_selector === sel('best') ? ['0x2a'] : ['0x1', '0x0', '0x1']);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    expect(await fetchRankedBest(PUB, { contract: CONTRACT, rpc: 'http://rpc.test' })).toBe(42);
+    expect(await fetchOnchainDex(PUB, { contract: CONTRACT, rpc: 'http://rpc.test' })).toEqual({ caught: 1n, shiny: 0n, catches: 1 });
+    expect(await fetchRankedBest(PUB, { contract: CONTRACT, rpc: 'http://rpc.test' })).toBe(42);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(await fetchRankedBest('not a felt', { contract: CONTRACT })).toBeNull();
   });
 
   it('remembers the last dex per key', () => {

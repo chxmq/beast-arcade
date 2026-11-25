@@ -50,12 +50,27 @@ export function shinyPixels(d: Uint8ClampedArray) {
   }
 }
 
-function silhouettePixels(d: Uint8ClampedArray) {
-  for (let i = 0; i < d.length; i += 4) {
-    d[i] = 52;
-    d[i + 1] = 50;
-    d[i + 2] = 45;
-    d[i + 3] = d[i + 3] > 24 ? 255 : 0;
+/**
+ * Dim grey shape of the Beast. Cut-out sprites keep their own alpha; a painting on a solid
+ * background (art that fills its border) is cut with the roster mask instead, so it reads as a
+ * body and not as a grey square.
+ */
+function silhouettePixels(d: Uint8ClampedArray, e: RosterEntry, aw: number, ah: number) {
+  let edge = 0;
+  let solid = 0;
+  for (let x = 0; x < aw; x++) for (const y of [0, ah - 1]) { edge++; if (d[(y * aw + x) * 4 + 3] > 200) solid++; }
+  for (let y = 1; y < ah - 1; y++) for (const x of [0, aw - 1]) { edge++; if (d[(y * aw + x) * 4 + 3] > 200) solid++; }
+  const mask = edge > 0 && solid / edge >= 0.6 ? maskOf(e) : null;
+  for (let y = 0; y < ah; y++) {
+    const my = Math.min(e.h - 1, Math.floor(((y + 0.5) * e.h) / ah));
+    for (let x = 0; x < aw; x++) {
+      const i = (y * aw + x) * 4;
+      const on = mask ? mask[my * e.w + Math.min(e.w - 1, Math.floor(((x + 0.5) * e.w) / aw))] : d[i + 3] > 24;
+      d[i] = 52;
+      d[i + 1] = 50;
+      d[i + 2] = 45;
+      d[i + 3] = on ? 255 : 0;
+    }
   }
 }
 
@@ -78,7 +93,8 @@ export function artCrop(e: RosterEntry, mode: ArtMode = 'art'): HTMLCanvasElemen
     if (mode === 'art') return;
     try {
       const id = g.getImageData(0, 0, c.width, c.height);
-      (mode === 'shiny' ? shinyPixels : silhouettePixels)(id.data);
+      if (mode === 'shiny') shinyPixels(id.data);
+      else silhouettePixels(id.data, e, c.width, c.height);
       g.putImageData(id, 0, 0);
     } catch {
       /* tainted canvas: leave the plain art */

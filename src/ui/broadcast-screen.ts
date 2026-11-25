@@ -1,6 +1,7 @@
 import type { App } from '../main.ts';
 import type { StatusResponse } from '../broadcast/api.ts';
 import { CALLSIGN_RE } from '../broadcast/hashes.ts';
+import { account, shortAddress } from '../chain/account.ts';
 import { fetchOnchainDex, popcount, rememberDex } from '../chain/dex.ts';
 import { guest } from '../chain/guest.ts';
 import { controls } from '../arcade/controls.ts';
@@ -29,6 +30,17 @@ export function broadcastScreen(app: App) {
   const msg = h('p', { class: 'he-msg' });
   const board = h('div', { class: 'he-board' });
   const dexLine = h('p', { class: 'he-dex dim' }, 'YOUR ONCHAIN BESTIARY ...');
+  // Who is playing: the guest key, or the player a wallet unlocked. The PLAYER card manages it.
+  const asName = h('b', {}, '');
+  const asWho = h('span', { class: 'he-as-who' }, '');
+  const asLink = h('button', { class: 'he-link', type: 'button' }, 'PLAYER CARD >');
+  const asLine = h('p', { class: 'he-as' }, 'PLAYING AS ', asName, ' ', asWho, asLink);
+  const paintAs = () => {
+    const s = account.state();
+    asName.textContent = CALLSIGN_RE.test(input.value) ? input.value : s.callsign;
+    asWho.textContent = s.mode === 'wallet' && s.wallet ? `(WALLET ${shortAddress(s.wallet.address)})` : '(GUEST)';
+    asWho.classList.toggle('wallet', s.mode === 'wallet');
+  };
 
   const lobby = h('div', { class: 'he he-lobby' },
     h('div', { class: 'he-head' }, back,
@@ -44,6 +56,7 @@ export function broadcastScreen(app: App) {
           h('li', {}, h('b', { class: 'hot' }, 'FIVE LIVES.'), ' A Beast that gets away costs one. Three misses in a row jam and cost one too.'),
           h('li', {}, h('b', {}, 'NO FEEDBACK UNTIL THE END.'), ' The contract decodes your run, then DECODE shows every strike.')),
         h('div', { class: 'he-form' }, h('label', { for: 'he-cs' }, 'CALLSIGN'), input, h('span', { class: 'dim' }, 'A-Z 0-9, up to 12')),
+        asLine,
         h('div', { class: 'he-actions' }, go),
         msg,
         dexLine),
@@ -55,7 +68,7 @@ export function broadcastScreen(app: App) {
         h('ol', { class: 'he-steps' },
           h('li', {}, "Today's tapes were committed onchain before anyone played: one Merkle root over every tape seed."),
           h('li', {}, 'You receive pixels only, a few seconds at a time. Your device never learns where the Beasts are.'),
-          h('li', {}, 'Your strike log is signed by a guest key kept in this browser. The relayer submits it with the revealed seed, and Starknet replays your run in Cairo before it records the score.')))),
+          h('li', {}, 'Your strike log is signed by your player key, kept in this browser (a guest key, or the one your wallet unlocked). The relayer submits it with the revealed seed, and Starknet replays your run in Cairo before it records the score.')))),
   );
   input.id = 'he-cs';
   app.root.append(lobby);
@@ -63,6 +76,19 @@ export function broadcastScreen(app: App) {
   input.addEventListener('input', () => {
     const v = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
     if (v !== input.value) input.value = v;
+    paintAs();
+  });
+  paintAs();
+  offs.push(account.subscribe(() => {
+    if (document.activeElement !== input) input.value = account.state().callsign;
+    paintAs();
+  }));
+  asLink.addEventListener('click', () => {
+    if (busy) return;
+    // Keep a callsign typed here: the card edits the same one.
+    if (CALLSIGN_RE.test(input.value)) account.setCallsign(input.value);
+    sound.sfx('select');
+    app.go({ name: 'player', back: 'broadcast' });
   });
   const toArcade = () => { sound.sfx('back'); app.go({ name: 'arcade' }); };
   go.addEventListener('click', () => void tuneIn());

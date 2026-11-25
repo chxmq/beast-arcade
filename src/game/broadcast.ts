@@ -140,9 +140,13 @@ export class BroadcastPlayer {
     this.raf = requestAnimationFrame(loop);
   }
 
-  /** performance.now() at which segment i may be requested (server gate t0 + 5 s i - 2.5 s, plus margin). */
+  /**
+   * performance.now() at which segment i may be requested (server gate t0 + 5 s i - 2.5 s, plus margin).
+   * The margin covers clock-sync error: the start call does chain reads before the server samples `now`,
+   * so the RTT/2 estimate runs a few hundred ms ahead and a tight margin hits the "too early" gate.
+   */
   private segOpensAt(i: number) {
-    return this.t.playStart + i * SEG_MS - 2500 + 150;
+    return this.t.playStart + i * SEG_MS - 2500 + 700;
   }
 
   private pump() {

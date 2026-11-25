@@ -242,6 +242,25 @@
 @keyframes cab-ledflash { 0% { background: #2a1408; } 100% { background: #050202; } }
 .cab.calm .cab-led.flash .cab-led-win { animation: none; }
 
+/* player chip: sits in the bezel strip under the screen, right above CREDITS / TICKETS */
+.cab-pl {
+  grid-area: bz; align-self: end; justify-self: end; z-index: 2;
+  margin: 0 calc(var(--u) * 4.4) calc(var(--u) * 1.62) 0;
+  display: inline-flex; align-items: center; gap: calc(var(--u) * 0.7); max-width: calc(var(--u) * 30);
+  padding: calc(var(--u) * 0.42) calc(var(--u) * 0.6) calc(var(--u) * 0.34);
+  font: normal calc(var(--u) * 0.78)/1 var(--font-display); letter-spacing: 0.06em; color: var(--cyan);
+  background: #050202; border: calc(var(--u) * 0.16) solid #2c1b18; cursor: pointer; touch-action: manipulation;
+}
+.cab-pl-lbl { color: #8b7a6a; }
+.cab-pl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: normal; text-shadow: 0 0 calc(var(--u) * 0.5) rgba(35, 213, 255, 0.55); }
+.cab-pl-w { display: inline-flex; align-items: center; gap: calc(var(--u) * 0.35); font-style: normal; color: var(--lime); text-shadow: 0 0 calc(var(--u) * 0.5) rgba(141, 255, 58, 0.6); }
+.cab-pl-w::before { content: ''; width: calc(var(--u) * 0.5); height: calc(var(--u) * 0.5); border-radius: 50%; background: var(--lime); box-shadow: 0 0 calc(var(--u) * 0.5) var(--lime); }
+.cab-pl:hover { border-color: var(--gold); }
+.cab-pl:hover .cab-pl-lbl { color: var(--gold); }
+.cab-pl:active { translate: 0 calc(var(--u) * 0.1); }
+.cab-pl.wallet { border-color: #2f5d1a; }
+.cab-pl.locked { opacity: 0.45; cursor: default; pointer-events: none; }
+
 /* ---------- phone, upright: screen on top, the panel below is the touch controller ---------- */
 @media (orientation: portrait) and (max-width: 820px) {
   #app { place-items: stretch; }
@@ -249,8 +268,8 @@
     --u: 1vw; --mq: 13; --deck: 30;
     width: 100%; height: 100%; border-radius: 0; box-shadow: none;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: calc(var(--u) * var(--mq) + env(safe-area-inset-top)) auto auto minmax(0, 1fr) auto;
-    grid-template-areas: "mq mq" "bz bz" "lc lt" "st bt" "sy sy";
+    grid-template-rows: calc(var(--u) * var(--mq) + env(safe-area-inset-top)) auto auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "mq mq" "bz bz" "lc lt" "pl pl" "st bt" "sy sy";
     padding-bottom: env(safe-area-inset-bottom);
   }
   .cab::after { box-shadow: none; }
@@ -266,7 +285,13 @@
   .cab-bulbs .bulb:nth-child(2n) { display: none; }
   .cab-bezel { margin: calc(var(--u) * 1.5) calc(var(--u) * 1.5) calc(var(--u) * 1); padding: calc(var(--u) * 1.4); border-radius: calc(var(--u) * 1.6); }
   .cab-plate { display: none; }
-  .cab-deck { grid-row: 3 / 6; border-radius: 0; }
+  .cab-deck { grid-row: 3 / 7; border-radius: 0; }
+  .cab-pl {
+    grid-area: pl; align-self: center; justify-self: center; margin: calc(var(--u) * 2.4) 0 0; max-width: calc(var(--u) * 90);
+    gap: calc(var(--u) * 1.6); padding: calc(var(--u) * 1.3) calc(var(--u) * 2) calc(var(--u) * 1.1);
+    font-size: calc(var(--u) * 2.4); border-width: calc(var(--u) * 0.4);
+  }
+  .cab-pl-w::before { width: calc(var(--u) * 1.4); height: calc(var(--u) * 1.4); }
   .cab-deck::before { display: none; }
   .cab-led { justify-content: center; padding: calc(var(--u) * 1.6) 0 0; align-self: center; }
   .cab-led.credits, .cab-led.tickets { align-self: center; padding: calc(var(--u) * 1.8) 0 0; }
@@ -304,8 +329,8 @@
     width: 100%; height: 100%; border-radius: 0; box-shadow: none;
     padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: "lc bz lt" "st bz bt" "sy bz bt";
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "lc bz lt" "pl bz bt" "st bz bt" "sy bz bt";
   }
   @supports (height: 100dvh) {
     .cab { --sh: min(calc(100dvh - 8px), calc((100vw - 280px - env(safe-area-inset-left) - env(safe-area-inset-right)) * 9 / 16)); }
@@ -318,6 +343,8 @@
   .cab-led-lbl { font-size: 7px; }
   .cab-led-win { font-size: 11px; padding: 4px 5px 3px; border-width: 2px; }
   .cab-led-win .ghost { left: 5px; top: 4px; }
+  .cab-pl { grid-area: pl; align-self: start; justify-self: center; margin: 6px 0 0; max-width: calc(var(--side) - 8px); gap: 4px; padding: 4px 5px 3px; font-size: 7px; border-width: 2px; }
+  .cab-pl-w::before { width: 4px; height: 4px; }
   .cab-stick-zone { width: min(calc(var(--side) - 14px), 40vh); height: min(calc(var(--side) - 14px), 40vh); }
   .cab-lever .ball { width: min(calc(var(--side) * 0.32), 13vh); left: max(calc(var(--side) * -0.16), -6.5vh); }
   .cab-lever .shaft { left: -3px; width: 6px; }

@@ -68,6 +68,11 @@
   padding: 0.45em 0.5em; text-transform: uppercase; letter-spacing: 0.08em; outline: none; user-select: text; -webkit-user-select: text; border-radius: 0;
 }
 .he .he-callsign:focus { box-shadow: 0 0 0 0.2em #000, 0 0 0 0.35em var(--k-gold); }
+.he-as { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.2em 0.45em; font-family: var(--k-fd); font-size: max(8px, 0.5em); letter-spacing: 0.05em; color: var(--k-dim); }
+.he-as b { font-weight: normal; color: var(--k-ink); }
+.he-as-who.wallet { color: var(--k-lime); }
+.he .he-link { margin-left: 0.4em; color: var(--k-cyan); border-bottom: 0.15em solid currentColor; padding-bottom: 0.15em; }
+.he .he-link:hover { color: var(--k-gold); }
 .he-actions { display: flex; gap: 0.7em; margin-top: 0.3em; }
 .he-msg { margin: 0; min-height: 1.2em; color: var(--k-gold); font-size: 1.15em; }
 .he-dex { margin: 0; font-size: 1.15em; color: var(--k-cyan); }

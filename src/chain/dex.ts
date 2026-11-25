@@ -1,6 +1,7 @@
-// Onchain Bestiary: which roster entries a guest key has caught in verified ranked runs.
-// Reads StaticGame.get_dex(player_pub) -> (u128 caught, u128 shiny, u32 catches) over the same
-// public JSON-RPC endpoint as the receipt check (browser CORS-safe). Every failure is a null.
+// Onchain Bestiary: which roster entries a player key has caught in verified ranked runs.
+// Reads StaticGame.get_dex(player_pub) -> (u128 caught, u128 shiny, u32 catches) and
+// best(player_pub) -> u32 over the same public JSON-RPC endpoint as the receipt check (browser
+// CORS-safe). Every failure is a null.
 
 import { keccak } from '@scure/starknet';
 import { PUBLIC_RPC } from './receipt.ts';
@@ -50,7 +51,7 @@ export interface DexOptions {
   fresh?: boolean;
 }
 
-const cache = new Map<string, { at: number; value: Promise<OnchainDex | null> }>();
+const cache = new Map<string, { at: number; value: Promise<unknown> }>();
 let contractMemo: { at: number; value: Promise<string | null> } | null = null;
 
 export function clearDexCache() {
@@ -72,7 +73,8 @@ async function contractFromStatus(): Promise<string | null> {
   }
 }
 
-async function readDex(pub: bigint, opts: DexOptions): Promise<OnchainDex | null> {
+/** starknet_call of a `fn(player_pub)` view; the raw result felts, or null on any failure. */
+async function callPlayerView(selector: string, pub: bigint, opts: DexOptions): Promise<unknown> {
   let contract = opts.contract ?? null;
   if (!contract) {
     if (!contractMemo || Date.now() - contractMemo.at > CACHE_MS) contractMemo = { at: Date.now(), value: contractFromStatus() };
@@ -81,7 +83,7 @@ async function readDex(pub: bigint, opts: DexOptions): Promise<OnchainDex | null
   if (!contract) return null;
   const body = JSON.stringify({
     jsonrpc: '2.0', id: 1, method: 'starknet_call',
-    params: { request: { contract_address: contract, entry_point_selector: GET_DEX_SELECTOR, calldata: ['0x' + pub.toString(16)] }, block_id: 'latest' },
+    params: { request: { contract_address: contract, entry_point_selector: selector, calldata: ['0x' + pub.toString(16)] }, block_id: 'latest' },
   });
   for (let attempt = 0; attempt < RETRIES; attempt++) {
     try {
@@ -100,7 +102,7 @@ async function readDex(pub: bigint, opts: DexOptions): Promise<OnchainDex | null
         }
         return null;
       }
-      return decodeDexResult(j.result);
+      return j.result ?? null;
     } catch {
       await sleep(400 * 2 ** attempt);
     }
@@ -108,24 +110,53 @@ async function readDex(pub: bigint, opts: DexOptions): Promise<OnchainDex | null
   return null;
 }
 
+async function readDex(pub: bigint, opts: DexOptions): Promise<OnchainDex | null> {
+  return decodeDexResult(await callPlayerView(GET_DEX_SELECTOR, pub, opts));
+}
+
 /** Read a player's onchain bestiary. Resolves null when offchain/unavailable. Never throws. */
 export async function fetchOnchainDex(playerPub: string | bigint, opts: DexOptions = {}): Promise<OnchainDex | null> {
+  return cachedRead('dex', playerPub, opts, readDex);
+}
+
+/** One player view read, cached for 20 s per (view, contract, rpc, player). */
+function cachedRead<T>(kind: string, playerPub: string | bigint, opts: DexOptions, read: (pub: bigint, opts: DexOptions) => Promise<T | null>): Promise<T | null> {
   let pub: bigint;
   try {
     pub = BigInt(playerPub);
   } catch {
-    return null;
+    return Promise.resolve(null);
   }
-  const key = `${opts.contract ?? ''}|${opts.rpc ?? ''}|${pub}`;
+  const key = `${kind}|${opts.contract ?? ''}|${opts.rpc ?? ''}|${pub}`;
   const hit = cache.get(key);
-  if (!opts.fresh && hit && Date.now() - hit.at < CACHE_MS) return hit.value;
-  const value = readDex(pub, opts).catch(() => null);
+  if (!opts.fresh && hit && Date.now() - hit.at < CACHE_MS) return hit.value as Promise<T | null>;
+  const value = read(pub, opts).catch(() => null);
   cache.set(key, { at: Date.now(), value });
   // A failed read must not stick for 20 s.
   void value.then((v) => {
     if (v === null && cache.get(key)?.value === value) cache.delete(key);
   });
   return value;
+}
+
+// ---------------------------------------------------------------------------------- best
+
+export const BEST_SELECTOR = '0x' + keccak(new TextEncoder().encode('best')).toString(16);
+
+/** `best(player_pub) -> u32` as returned by starknet_call: one felt. Null on any other shape. */
+export function decodeBestResult(r: unknown): number | null {
+  if (!Array.isArray(r) || r.length < 1) return null;
+  try {
+    const v = BigInt(r[0] as string);
+    return v >= 0n && v <= 0xffff_ffffn ? Number(v) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A player's best verified ranked score (0 = none yet). Null when offchain/unavailable. Never throws. */
+export async function fetchRankedBest(playerPub: string | bigint, opts: DexOptions = {}): Promise<number | null> {
+  return cachedRead('best', playerPub, opts, async (pub, o) => decodeBestResult(await callPlayerView(BEST_SELECTOR, pub, o)));
 }
 
 // ---------------------------------------------------------------------------------- diffing

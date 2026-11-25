@@ -22,6 +22,7 @@ import type { HuntOutcome } from './game/hunt.ts';
 import { arcadeScreen } from './arcade/select.ts';
 import { prizesScreen } from './arcade/prizes.ts';
 import { microScreen } from './micro/screen.ts';
+import { playerScreen } from './ui/player.ts';
 
 export type Route =
   | { name: 'boot' }
@@ -37,7 +38,12 @@ export type Route =
   | { name: 'decode'; data: DecodeData }
   | { name: 'arcade' }
   | { name: 'micro' }
-  | { name: 'prizes' };
+  | { name: 'prizes' }
+  | { name: 'player'; back?: PlayerBack };
+
+/** Where the PLAYER card returns to (screens that need no route data). */
+export type PlayerBack = 'arcade' | 'boot' | 'prizes' | 'bestiary' | 'about' | 'ai-test' | 'broadcast';
+const PLAYER_BACK = new Set<string>(['arcade', 'boot', 'prizes', 'bestiary', 'about', 'ai-test', 'broadcast']);
 
 export interface App {
   /** The cabinet's CRT screen. Every screen renders inside it and sizes itself to it. */
@@ -65,21 +71,29 @@ const screens: Record<Route['name'], Screen> = {
   arcade: arcadeScreen,
   micro: microScreen,
   prizes: prizesScreen,
+  player: playerScreen,
 };
 
 /** Menu screens play their own theme; every other screen starts in silence and runs its own music. */
-const MENU = new Set<Route['name']>(['boot', 'arcade', 'prizes', 'bestiary', 'about', 'ai-test', 'guide', 'story']);
+const MENU = new Set<Route['name']>(['boot', 'arcade', 'prizes', 'bestiary', 'about', 'ai-test', 'guide', 'story', 'player']);
 
 /** Which cabinet a route belongs to, so a payout (tickets.add) is credited to the game that paid it. */
 const CABINET: Partial<Record<Route['name'], string>> = {
   micro: 'micro', hunt: 'catch', results: 'catch', primer: 'catch', broadcast: 'eyes', decode: 'eyes',
 };
 
-/** Deep links: #arcade, #prizes, #bestiary, #micro, #broadcast, #about, #ai-test. */
+/** Deep links: #arcade, #prizes, #bestiary, #micro, #broadcast, #about, #ai-test, #player. */
 const LINKS: Partial<Record<string, Route>> = {
   arcade: { name: 'arcade' }, prizes: { name: 'prizes' }, bestiary: { name: 'bestiary' }, micro: { name: 'micro' },
   broadcast: { name: 'broadcast' }, about: { name: 'about' }, 'ai-test': { name: 'ai-test' }, catch: { name: 'hunt' },
+  player: { name: 'player' },
 };
+
+/**
+ * Screens the cabinet's player chip may leave for the PLAYER card. Never mid-run: a game (or the
+ * ranked lobby, which turns into the tape) would lose its run, and the lobby links the card itself.
+ */
+const CHIP_OK = new Set<Route['name']>(['boot', 'arcade', 'prizes', 'bestiary', 'about', 'ai-test', 'results', 'decode', 'player']);
 
 /** The marquee Beasts: two Art Hackathon species if the roster has them. */
 function marqueePair(roster: Roster): [RosterEntry | undefined, RosterEntry | undefined] {
@@ -110,6 +124,7 @@ async function main() {
 
   let cleanup: (() => void) | null = null;
   let generation = 0;
+  let current: Route['name'] = 'boot';
   const app: App = {
     root,
     roster,
@@ -127,6 +142,8 @@ async function main() {
       cabinet.syncCalm();
       if (!MENU.has(route.name)) music.stop();
       tickets.setSource(CABINET[route.name] ?? null);
+      current = route.name;
+      cabinet.setPlayerLocked(!CHIP_OK.has(route.name));
       const gen = ++generation;
       const done = screens[route.name](app, route);
       // A screen that redirected while it was being built has already been replaced.
@@ -134,6 +151,11 @@ async function main() {
       else done();
     },
   };
+
+  cabinet.onPlayer(() => {
+    if (!CHIP_OK.has(current) || current === 'player') return;
+    app.go({ name: 'player', back: PLAYER_BACK.has(current) ? (current as PlayerBack) : 'arcade' });
+  });
 
   const link = LINKS[location.hash.replace('#', '')];
   app.go(link ?? { name: 'boot' });
