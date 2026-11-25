@@ -1,0 +1,127 @@
+/* Operator pages (ABOUT, THE AI TEST), rendered inside the cabinet screen.
+   The screen sets the base font size, so everything here is sized in em. Classes are prefixed op-. */
+
+.op {
+  position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 1.1em 1.8em;
+  background: var(--screen, #07070a); color: var(--ink, #f4ecd8);
+  font-family: var(--font-body, 'VT323', ui-monospace, monospace); line-height: 1.15;
+  scrollbar-width: thin; scrollbar-color: #4a302b transparent;
+}
+.op::-webkit-scrollbar { width: 0.4em; }
+.op::-webkit-scrollbar-thumb { background: #4a302b; }
+.op button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.op p { margin: 0.35em 0; max-width: 44em; }
+.op .op-dim { color: var(--dim, #9a8f7a); }
+.op b { font-weight: normal; }
+
+/* ---------- top bar: title and the button prompts ---------- */
+.op-bar {
+  position: sticky; top: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5em 1em;
+  margin: 0 -1.1em; padding: 0.8em 1.1em 0.6em;
+  background: var(--screen, #07070a); border-bottom: 0.16em solid var(--hot, #ff3b2f);
+}
+.op-title {
+  margin: 0; font: normal max(9px, 0.95em)/1.15 var(--font-display, monospace); letter-spacing: 0.04em;
+  color: var(--gold, #ffc61a); text-shadow: 0 0 0.4em rgba(255, 198, 26, 0.5), 0.12em 0.12em 0 #5a1410;
+}
+.op-prompts { display: flex; flex-wrap: wrap; gap: 0.4em 1em; }
+.op .op-prompt {
+  display: inline-flex; align-items: center; gap: 0.55em; padding: 0.15em 0;
+  font: normal max(8px, 0.52em)/1 var(--font-display, monospace); letter-spacing: 0.05em; color: var(--ink, #f4ecd8);
+}
+.op-prompt:hover .op-plbl, .op-prompt:focus-visible .op-plbl { color: var(--gold, #ffc61a); }
+.op-cap {
+  flex: none; display: inline-grid; place-items: center; width: 2.4em; height: 2.4em; border-radius: 50%;
+  color: #140b0b; background: var(--gold, #ffc61a);
+  box-shadow: inset 0 -0.32em 0 rgba(0, 0, 0, 0.3), 0 0 0 0.2em #000;
+}
+.op-ka .op-cap { background: var(--hot, #ff3b2f); }
+.op-kc .op-cap { background: var(--cyan, #23d5ff); }
+.op-prompt:active .op-cap { transform: translateY(0.14em); box-shadow: inset 0 -0.12em 0 rgba(0, 0, 0, 0.3), 0 0 0 0.2em #000, 0 0 0.8em var(--gold, #ffc61a); }
+.op-ka:active .op-cap { box-shadow: inset 0 -0.12em 0 rgba(0, 0, 0, 0.3), 0 0 0 0.2em #000, 0 0 0.8em var(--hot, #ff3b2f); }
+
+/* ---------- sections ---------- */
+.op .op-lead { font-size: 1.2em; max-width: 34em; margin: 0.8em 0 0.2em; }
+.op-sec { margin-top: 1.4em; }
+.op-h {
+  display: flex; align-items: center; gap: 0.6em; margin: 0 0 0.6em;
+  font: normal max(8px, 0.62em)/1.3 var(--font-display, monospace); letter-spacing: 0.06em; color: var(--cyan, #23d5ff);
+}
+.op-h::before { content: ''; flex: none; width: 0.75em; height: 0.75em; background: var(--hot, #ff3b2f); }
+.op-h .op-n { color: var(--dim, #9a8f7a); }
+
+/* the games */
+.op-games { display: grid; gap: 0.5em; max-width: 46em; }
+.op-game { display: grid; grid-template-columns: 11.5em minmax(0, 1fr); gap: 0.2em 0.9em; align-items: baseline; }
+.op-gname { font: normal max(8px, 0.52em)/1.5 var(--font-display, monospace); letter-spacing: 0.04em; color: var(--gc, var(--gold, #ffc61a)); }
+.op-game.g-micro { --gc: var(--hot, #ff3b2f); }
+.op-game.g-catch { --gc: var(--lime, #8dff3a); }
+.op-game.g-eyes { --gc: var(--cyan, #23d5ff); }
+.op-game.g-prizes { --gc: var(--gold, #ffc61a); }
+.op-game.g-book { --gc: var(--ink, #f4ecd8); }
+.op-tag {
+  display: inline-block; vertical-align: 0.1em; margin-left: 0.5em; padding: 0.25em 0.4em 0.2em;
+  font: normal max(7px, 0.42em)/1 var(--font-display, monospace); letter-spacing: 0.05em; color: #000; background: var(--cyan, #23d5ff);
+}
+
+/* Beast metadata table */
+.op-meta { display: grid; grid-template-columns: minmax(8em, 12.5em) minmax(0, 1fr); max-width: 46em; margin: 0; border-top: 0.1em dotted #4a302b; }
+.op-meta dt, .op-meta dd { margin: 0; padding: 0.4em 0; border-bottom: 0.1em dotted #4a302b; }
+.op-meta dt { padding: 0.75em 0.8em 0.4em 0; font: normal max(8px, 0.5em)/1.4 var(--font-display, monospace); letter-spacing: 0.04em; color: var(--gold, #ffc61a); }
+.op-meta dd b { color: var(--ink, #f4ecd8); border-bottom: 0.1em solid #4a302b; }
+
+/* square bullets */
+.op-list { list-style: none; margin: 0.3em 0; padding: 0; max-width: 44em; display: grid; gap: 0.5em; }
+.op-list li { position: relative; padding-left: 1.3em; }
+.op-list li::before { content: ''; position: absolute; left: 0.1em; top: 0.4em; width: 0.45em; height: 0.45em; background: var(--hot, #ff3b2f); }
+.op-list b { color: var(--gold, #ffc61a); }
+.op-list.cyan li::before { background: var(--cyan, #23d5ff); }
+
+/* bordered call to action (A cap + label) */
+.op .op-cta { margin-top: 0.8em; padding: 0.45em 0.8em 0.45em 0.5em; border: 0.16em solid var(--hot, #ff3b2f); }
+.op .op-cta:hover { background: #1c0d0b; }
+
+/* Art Hackathon credits */
+.op-credits { display: grid; grid-template-columns: repeat(auto-fill, minmax(13.5em, 1fr)); gap: 0.5em; margin-top: 0.5em; }
+.op-credit {
+  display: grid; grid-template-columns: 3em minmax(0, 1fr); column-gap: 0.6em; align-items: center;
+  padding: 0.35em 0.45em; background: #0f0b0b; border: 0.1em solid #2a1d1a; min-width: 0;
+}
+.op-thumb { grid-row: span 3; width: 3em; height: 3em; display: grid; place-items: center; background: #000; border: 0.12em solid var(--tc, #4a302b); }
+.op-thumb canvas { width: 86%; height: 86%; object-fit: contain; image-rendering: pixelated; }
+.op-cname { font-size: 1.1em; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.op-cmeta { font-size: 0.85em; line-height: 1.05; color: var(--tc, var(--dim, #9a8f7a)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.op-cby { font-size: 0.85em; line-height: 1.05; color: var(--dim, #9a8f7a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.op-credit.ours { border-color: var(--hot, #ff3b2f); }
+.op-t1 { --tc: var(--t1, #ffb000); }
+.op-t2 { --tc: var(--t2, #23d5ff); }
+.op-t3 { --tc: var(--t3, #8dff3a); }
+.op-t4 { --tc: var(--t4, #f4ecd8); }
+.op-t5 { --tc: var(--t5, #9a8f7a); }
+.op .op-src { margin-top: 1.1em; font-size: 0.9em; color: var(--dim, #9a8f7a); }
+
+/* ---------- THE AI TEST ---------- */
+.op .op-ai-lead { margin: 0.65em 0 0.55em; }
+.op-ai-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.9em; }
+.op-fig { margin: 0; min-width: 0; }
+.op-fig.eyes { --fc: var(--lime, #8dff3a); }
+.op-fig.ai { --fc: var(--hot, #ff3b2f); }
+.op-fig-h {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3em 0.6em; margin-bottom: 0.45em;
+  font: normal max(8px, 0.5em)/1.25 var(--font-display, monospace); letter-spacing: 0.04em;
+}
+.op-fig-h b { color: var(--fc); }
+.op-fig-h span { color: var(--dim, #9a8f7a); }
+.op-tv { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #000; border: 0.18em solid var(--fc); }
+.op-tv .tv-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.op-shot { position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; translate: -50% -50%; display: block; image-rendering: pixelated; }
+.op-figcap { margin-top: 0.3em; min-height: 1.15em; color: var(--dim, #9a8f7a); }
+.op-figcap b { color: var(--ink, #f4ecd8); }
+.op-frozen {
+  position: absolute; left: 0.45em; top: 0.45em; padding: 0.4em 0.5em 0.35em;
+  font: normal max(7px, 0.45em)/1 var(--font-display, monospace); letter-spacing: 0.05em; color: #000; background: var(--hot, #ff3b2f);
+}
+.op .op-freeze.on { border-color: var(--lime, #8dff3a); }
+.op-freeze.on .op-plbl { color: var(--lime, #8dff3a); }

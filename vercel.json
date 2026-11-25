@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/broadcast/status.js": { "maxDuration": 15 },
+    "api/broadcast/start.js": { "maxDuration": 15 },
+    "api/broadcast/seg.js": { "maxDuration": 30 },
+    "api/broadcast/submit.js": { "maxDuration": 30 },
+    "api/cron/post-root.js": { "maxDuration": 60 }
+  },
+  "crons": [{ "path": "/api/cron/post-root", "schedule": "5 0 * * *" }]
+}

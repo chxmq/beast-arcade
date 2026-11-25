@@ -1,0 +1,185 @@
+/* MICRO MAYHEM (src/micro). Everything is sized to the cabinet screen via container units. */
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/fonts/PressStart2P.woff2') format('woff2');
+  font-display: block;
+}
+
+.micro {
+  /* ARCADE.md palette, scoped so the screen looks right whatever loads first */
+  --mm-hot: #ff3b2f;
+  --mm-gold: #ffc61a;
+  --mm-cyan: #23d5ff;
+  --mm-lime: #8dff3a;
+  --mm-ink: #f4ecd8;
+  --mm-dim: #9a8f7a;
+  --mm-cab: #140b0b;
+  --mm-screen: #07070a;
+  --mm-font: 'Press Start 2P', 'VT323', ui-monospace, monospace;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--mm-screen);
+  container-type: size;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+.micro.micro-flow { position: relative; width: 100%; height: 100%; }
+.micro.micro-demo, .micro.micro-demo .micro-canvas { pointer-events: none; cursor: default; }
+
+.micro-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: pointer;
+}
+
+/* ---------- results ---------- */
+.mm-results {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mm-font);
+  color: var(--mm-ink);
+  background: rgba(7, 7, 10, 0.55);
+  animation: mm-fade 0.25s ease-out;
+}
+.mm-card {
+  width: min(94cqw, 158cqh);
+  display: grid;
+  gap: 2.4cqh;
+  padding: 3.2cqh 3.6cqh 3cqh;
+  background: var(--mm-cab);
+  border: 0.7cqh solid var(--mm-ink);
+  box-shadow: 0 0 0 0.7cqh var(--mm-cab), 1.4cqh 1.4cqh 0 0.7cqh #000;
+  animation: mm-drop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.mm-title {
+  font-size: 7cqh;
+  line-height: 1;
+  text-align: center;
+  color: var(--mm-hot);
+  text-shadow: 0.5cqh 0.5cqh 0 #000;
+  letter-spacing: 0.04em;
+}
+.mm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4cqh; }
+.mm-stat {
+  position: relative;
+  display: grid;
+  gap: 1.4cqh;
+  justify-items: center;
+  padding: 1.6cqh 0.8cqh 1.8cqh;
+  background: #000;
+  border: 0.4cqh solid #3a2522;
+}
+.mm-stat .k { font-size: 1.9cqh; color: var(--mm-dim); white-space: nowrap; }
+.mm-stat .v { font-size: 4.6cqh; line-height: 1; color: var(--mm-ink); }
+.mm-tag {
+  position: absolute;
+  top: -1.6cqh;
+  right: -1cqh;
+  font-size: 1.7cqh;
+  padding: 0.7cqh 0.8cqh;
+  color: var(--mm-cab);
+  background: var(--mm-lime);
+  transform: rotate(6deg);
+  animation: mm-blink 0.8s steps(1, end) infinite;
+}
+.mm-met {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1cqh;
+  height: 7.5cqh;
+  overflow: hidden;
+}
+.mm-thumb { height: 100%; aspect-ratio: 1; display: grid; place-items: end center; }
+.mm-thumb canvas { width: 100%; height: 100%; object-fit: contain; object-position: bottom; image-rendering: pixelated; }
+.mm-more { font-size: 2cqh; color: var(--mm-dim); align-self: center; }
+
+.mm-pay { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2.4cqh; }
+.mm-dispenser {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 8.6cqh;
+  padding-left: 4.6cqh;
+  overflow: hidden;
+  background: #000;
+  border: 0.4cqh solid #3a2522;
+}
+.mm-slot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4cqh;
+  background: repeating-linear-gradient(0deg, #2a1a18 0 0.6cqh, #1a0f0e 0.6cqh 1.2cqh);
+  border-right: 0.5cqh solid var(--mm-gold);
+  z-index: 1;
+}
+.mm-strip { display: flex; gap: 0; height: 6cqh; }
+.mm-ticket {
+  flex: 0 0 auto;
+  width: 8.4cqh;
+  height: 100%;
+  display: grid;
+  place-content: center;
+  gap: 0.6cqh;
+  background: var(--mm-gold);
+  border-right: 0.35cqh dashed var(--mm-cab);
+  color: var(--mm-cab);
+  animation: mm-print 0.09s linear;
+}
+.mm-ticket b { font-weight: normal; font-size: 1.15cqh; text-align: center; letter-spacing: 0.02em; }
+.mm-total { font-size: 4.4cqh; white-space: nowrap; color: var(--mm-gold); text-shadow: 0.4cqh 0.4cqh 0 #000; }
+.mm-total .u { font-size: 2.2cqh; color: var(--mm-ink); }
+.mm-total.done .n { animation: mm-pop 0.35s ease-out; color: var(--mm-lime); }
+.mm-break { font-size: 1.8cqh; color: var(--mm-dim); text-align: center; line-height: 1.5; white-space: pre-wrap; }
+
+.mm-actions { display: flex; justify-content: center; gap: 3cqh; }
+.mm-btn {
+  font-family: var(--mm-font);
+  font-size: 2.4cqh;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.2cqh;
+  padding: 1.4cqh 2.2cqh;
+  color: var(--mm-ink);
+  background: #000;
+  border: 0.4cqh solid #3a2522;
+  cursor: pointer;
+}
+.mm-btn i {
+  font-style: normal;
+  display: inline-grid;
+  place-items: center;
+  width: 4.2cqh;
+  height: 4.2cqh;
+  border-radius: 50%;
+  color: var(--mm-cab);
+  font-size: 2cqh;
+  box-shadow: inset 0 -0.5cqh 0 rgba(0, 0, 0, 0.35);
+}
+.mm-btn.a i { background: var(--mm-hot); }
+.mm-btn.b i { background: var(--mm-gold); }
+.mm-btn:hover, .mm-btn:focus-visible { border-color: var(--mm-ink); outline: none; }
+.mm-btn.a { animation: mm-blink 1.1s steps(1, end) infinite; animation-delay: 1.2s; }
+
+@keyframes mm-fade { from { opacity: 0; } }
+@keyframes mm-drop { from { transform: translateY(-14cqh) scale(0.96); opacity: 0; } }
+@keyframes mm-print { from { transform: translateX(-100%); } }
+@keyframes mm-pop { 0% { transform: scale(1.5); } 100% { transform: scale(1); } }
+@keyframes mm-blink { 50% { opacity: 0.35; } }
+.mm-total .n { display: inline-block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mm-results, .mm-card, .mm-ticket, .mm-tag, .mm-btn.a, .mm-total.done .n { animation: none; }
+}
