@@ -725,14 +725,16 @@
 .bk-tile.sel { outline: 0.2em solid var(--gold); outline-offset: 0.05em; z-index: 1; }
 .bk-tile.empty { background: transparent; border-color: transparent; }
 .bk-detail { height: 100%; display: flex; flex-direction: column; gap: 0.35em; overflow: hidden; }
-.bk-d-art { --fc: #30231c; flex: none; height: 44%; min-height: 3em; display: grid; place-items: center; background: #0e0907; border: 0.16em solid var(--fc); }
+.bk-d-art { --fc: #30231c; position: relative; overflow: hidden; flex: none; height: 44%; min-height: 3em; display: grid; place-items: center; background: #0e0907; border: 0.16em solid var(--fc); }
 .bk-d-art.caught.t1 { --fc: var(--t1); }
 .bk-d-art.caught.t2 { --fc: var(--t2); }
 .bk-d-art.caught.t3 { --fc: var(--t3); }
 .bk-d-art.caught.t4 { --fc: var(--t4); }
 .bk-d-art.caught.t5 { --fc: var(--t5); }
 .bk-d-art.shiny { --fc: var(--gold); background: #211706; }
-.bk-d-art img, .bk-d-art canvas { height: 88%; width: 88%; object-fit: contain; image-rendering: pixelated; }
+/* Pinned to the frame: a percentage height does not resolve inside the auto grid row, so square art
+   used to take its height from its width and spill over the name and stats. */
+.bk-d-art img, .bk-d-art canvas { position: absolute; left: 6%; top: 6%; height: 88%; width: 88%; object-fit: contain; image-rendering: pixelated; }
 .bk-d-art img.gold { filter: sepia(1) saturate(3.2) hue-rotate(-12deg) brightness(1.1); }
 .bk-d-art .q { font: normal 1.2em/1 var(--font-display); color: #3e3029; }
 .bk-d-head { display: flex; align-items: baseline; gap: 0.6em; min-width: 0; }
