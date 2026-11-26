@@ -6,7 +6,7 @@
 
 An arcade cabinet in your browser, full of small, fast Beast games. Every Beast inside is a real Beast NFT read from Starknet, the prizes go into a book you fill, and the one ranked cabinet is a game an AI can't see.
 
-**Play it at [static-beasts.vercel.app](https://static-beasts.vercel.app).** No wallet, no sign-up: click the coin slot (or press Enter), pick a cabinet, and you're playing.
+**Play it at [static-beasts.vercel.app](https://static-beasts.vercel.app).** No wallet, no sign-up: click the coin slot (or press Enter), pick a cabinet, and you're playing. There's also an [85-second video walkthrough](https://drive.google.com/file/d/1Kb8xPBlrbPFU8WMUQLQhBWDNDUMd2Mz_/view?usp=sharing).
 
 Built for the Devcon 8 Beast NFT Vibeathon.
 
