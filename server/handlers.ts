@@ -183,6 +183,7 @@ export const status = safe(async () => {
   const now = Date.now();
   if (env.mode === 'chain' && statusCache && now - statusCache.at < 10_000) return json(statusCache.body);
   const ctx = await liveRoot(env);
+  await healTodayRoot(env, ctx, now);
   let body: StatusResponse;
   if (typeof ctx === 'string') {
     body = { onAir: false, reason: ctx, rootId: 0, day: utcDay(now), n: 0, expiresAt: 0, board: [] };
@@ -338,6 +339,59 @@ export const submit = safe(async (req) => {
 
 let postedDay = -1;
 
+type EnsureResult =
+  | { posted: false; day: number; rootId: number; reason: string }
+  | { posted: true; day: number; n: number; root: string; expiresAt: number; txHash: string };
+
+/**
+ * Post today's tape root unless the chain already has one for today. Idempotent: the daily cron
+ * calls it, and so does the status check (self-heal) when a new UTC day has no root yet. Seeds are
+ * derived from (secret, day), so two instances racing post the same root; the contract just
+ * records it twice.
+ */
+async function ensureTodayRoot(env: ServerEnv): Promise<EnsureResult> {
+  const chain = chainFor(env);
+  const day = utcDay();
+  const { rootId, info } = await chain.latestRoot();
+  if ((rootId > 0 && tapeDayOf(info.expiresAt) === day) || postedDay === day) {
+    return { posted: false, day, rootId, reason: 'already posted for today' };
+  }
+  const n = env.tapesPerDay;
+  const tree = await treeFor(env.secret!, day, n);
+  const txHash = await chain.invoke('post_tape_root', [tree.root, BigInt(n), BigInt(expiresAtFor(day))]);
+  postedDay = day;
+  latestCache = null;
+  statusCache = null;
+  return { posted: true, day, n, root: hex(tree.root), expiresAt: expiresAtFor(day), txHash };
+}
+
+let healing: { day: number; at: number; failed: boolean } | null = null;
+const HEAL_RETRY_MS = 120_000;
+
+/**
+ * Self-heal for a missed cron: on a new UTC day with no root yet, the first status check posts it.
+ * One attempt per instance per day (retried after a failure, with a backoff), bounded so the status
+ * reply never waits long.
+ */
+async function healTodayRoot(env: ServerEnv, ctx: RootCtx | string, now: number) {
+  if (env.mode !== 'chain') return;
+  const day = utcDay(now);
+  // In chain mode a string context always means "no valid root": none yet, or yesterday's expired.
+  const stale = typeof ctx === 'string' || ctx.tapeDay < day;
+  if (!stale || postedDay === day) return;
+  if (healing?.day === day && (!healing.failed || now - healing.at < HEAL_RETRY_MS)) return;
+  const attempt = { day, at: now, failed: false };
+  healing = attempt;
+  const run = ensureTodayRoot(env).then(
+    (r) => console.log(`[broadcast] self-heal for day ${day}: ${r.posted ? `posted, tx ${r.txHash}` : r.reason}`),
+    (e) => {
+      attempt.failed = true;
+      console.error(`[broadcast] self-heal for day ${day} failed: ${e instanceof Error ? e.message : e}`);
+    },
+  );
+  await Promise.race([run, new Promise((r) => setTimeout(r, 9000))]);
+}
+
 export const postRoot = safe(async (req) => {
   const env = readEnv();
   if (!env.cronSecret) return fail(503, 'CRON_SECRET not set');
@@ -346,19 +400,7 @@ export const postRoot = safe(async (req) => {
     return fail(401, 'unauthorized');
   }
   if (env.mode !== 'chain') return fail(503, `not configured: ${env.reason ?? 'offchain mode'}`);
-  const chain = chainFor(env);
-  const day = utcDay();
-  const { rootId, info } = await chain.latestRoot();
-  if ((rootId > 0 && tapeDayOf(info.expiresAt) === day) || postedDay === day) {
-    return json({ posted: false, day, rootId, reason: 'already posted for today' });
-  }
-  const n = env.tapesPerDay;
-  const tree = await treeFor(env.secret!, day, n);
-  const txHash = await chain.invoke('post_tape_root', [tree.root, BigInt(n), BigInt(expiresAtFor(day))]);
-  postedDay = day;
-  latestCache = null;
-  statusCache = null;
-  return json({ posted: true, day, n, root: hex(tree.root), expiresAt: expiresAtFor(day), txHash });
+  return json(await ensureTodayRoot(env));
 });
 
 export const routes: Record<string, Partial<Record<'GET' | 'POST', Handler>>> = {
